@@ -1,0 +1,31 @@
+from sqlalchemy.orm import Session
+from . import models, schemas
+
+def create_couriers(db: Session, data: list[schemas.CourierItem]) -> list[int]:
+    ids = []
+    for c in data:
+        db.add(models.Courier(**c.dict()))
+        ids.append(c.courier_id)
+    db.commit()
+    return ids
+
+def update_courier(db: Session, courier_id: int, update_data: schemas.CourierUpdateRequest) -> models.Courier | None:
+    courier = db.query(models.Courier).filter(models.Courier.courier_id == courier_id).first()
+    if not courier:
+        return None
+    for k, v in update_data.dict(exclude_unset=True).items():
+        setattr(courier, k, v)
+    db.commit()
+    db.refresh(courier)
+    return courier
+
+def create_orders(db: Session, data: list[schemas.OrderItem]) -> list[int]:
+    ids = []
+    for o in data:
+        db.add(models.Order(**o.dict()))
+        ids.append(o.order_id)
+    db.commit()
+    return ids
+
+def get_courier_orders(db: Session, courier_id: int) -> list[models.Order]:
+    return db.query(models.Order).filter(models.Order.assigned_courier_id == courier_id).all()
